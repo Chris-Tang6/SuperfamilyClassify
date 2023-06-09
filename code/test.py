@@ -1,6 +1,6 @@
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "4"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1,2"
 import time
 import pandas as pd
 from tqdm import tqdm
@@ -103,10 +103,11 @@ graph_construction_model = layers.GraphConstruction(node_layers=[geometry.AlphaC
                                                     edge_feature="gearnet")
 
 task = tasks.PropertyPrediction(gearnet, graph_construction_model=graph_construction_model, num_mlp_layer=3,
-                                task=dataset.tasks, num_class=2065, criterion="ce", metric=["auprc", "auroc", "f1_max"], verbose=1)
+                                task=dataset.tasks, num_class=2065, criterion="ce", metric=["auprc", "auroc"], verbose=1)
 
 optimizer = torch.optim.Adam(task.parameters(), lr=1e-4)
 solver = core.Engine(task, train_set, valid_set, test_set, optimizer,
-                     gpus=[4], batch_size=16)
+                     gpus=[1], batch_size=64)
 solver.train(num_epoch=100)
 solver.evaluate("valid")
+# solver.evaluate("test")
