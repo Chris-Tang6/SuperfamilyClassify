@@ -102,12 +102,12 @@ graph_construction_model = layers.GraphConstruction(node_layers=[geometry.AlphaC
                                                                  geometry.SequentialEdge(max_distance=2)],
                                                     edge_feature="gearnet")
 
-task = tasks.PropertyPrediction(gearnet, graph_construction_model=graph_construction_model, num_mlp_layer=3,
+task = tasks.PropertyPrediction(gearnet_edge, graph_construction_model=graph_construction_model, num_mlp_layer=3,
                                 task=dataset.tasks, num_class=2065, criterion="ce", metric=["auprc", "auroc"], verbose=1)
 
 optimizer = torch.optim.Adam(task.parameters(), lr=1e-4)
 solver = core.Engine(task, train_set, valid_set, test_set, optimizer,
-                     gpus=[1], batch_size=64)
-solver.train(num_epoch=100)
+                     gpus=[1], batch_size=32)
+solver.train(num_epoch=1)
 solver.evaluate("valid")
 # solver.evaluate("test")
