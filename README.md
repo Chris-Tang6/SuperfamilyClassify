@@ -16,6 +16,25 @@
  
 ```
 
+**数据集**
+改用不同的数据集应该修改`/code/test.py`中的`ScopeSuperFamilyClassify`类\
+属性：
+    `source_file`
+    ``\
+以及初始化类时传入的`path`
+```
+pdb_40数据集
+path = '/home/tangwuguo/datasets/scope40'
+pdb_dir = '/home/tangwuguo/datasets/scope40/dbstyle_all-40-2.08'
+source_file = '/home/tangwuguo/datasets/scope40/pdb_scope_db40.csv'
+
+从pdb_40中采的200小数据集
+path = '/home/tangwuguo/datasets/scope40_s'
+pdb_dir = '/home/tangwuguo/datasets/scope40_s/ents'
+source_file = '/home/tangwuguo/datasets/scope40_s/scop40_s.csv'
+
+```
+
 ## 如何使用
 
 ### 1. 安装依赖
