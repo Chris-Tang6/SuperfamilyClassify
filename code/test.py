@@ -85,10 +85,6 @@ train_set, valid_set, test_set = dataset.split()
 print("Shape of function labels for a protein: ", dataset[0]["superfamily_label"].shape)
 print("train samples: %d, valid samples: %d, test samples: %d" % (len(train_set), len(valid_set), len(test_set)))
 
-graph_construction_model = layers.GraphConstruction(node_layers=[geometry.AlphaCarbonNode()],
-                                                    edge_layers=[geometry.SpatialEdge(radius=10.0, min_distance=5),
-                                                                 geometry.KNNEdge(k=10, min_distance=5),
-                                                                 geometry.SequentialEdge(max_distance=2)])
 gearnet = models.GearNet(input_dim=21, hidden_dims=[512, 512, 512], num_relation=7,
                          batch_norm=True, concat_hidden=True, short_cut=True, readout="sum")
 
