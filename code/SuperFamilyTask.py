@@ -27,10 +27,10 @@ class SuperfamilyPrediction(tasks.Task, core.Configurable):
         metric = {}
         
         pred = self.predict(batch, all_loss, metric)  # predict label (BS,2065)
-        target = self.target(batch)  # groundtruth label  (2065,1)
+        target = self.target(batch)  # groundtruth label  (BS,1)
         metric.update(self.evaluate(pred, target))
         
-        loss = F.cross_entropy(pred, torch.squeeze(target))
+        loss = F.cross_entropy(pred, target)
         metric["ce loss"] = loss
         all_loss += loss
         return all_loss, metric
@@ -45,12 +45,13 @@ class SuperfamilyPrediction(tasks.Task, core.Configurable):
         return pred
 
     def target(self, batch):
-        batch_label = batch["superfamily_label"].unsqueeze(1)
+        batch_label = batch["superfamily_label"]
         return batch_label
 
     def evaluate(self, pred, target):
-        roc = metrics.area_under_roc(torch.argmax(pred), target)
-        pr = metrics.area_under_prc(torch.argmax(pred), target)        
+        pred_label = torch.argmax(pred, dim=1)
+        roc = metrics.area_under_roc(pred_label, target)
+        pr = metrics.area_under_prc(pred_label, target)        
         return {
             "AUROC": roc,
             "AUPR": pr,
