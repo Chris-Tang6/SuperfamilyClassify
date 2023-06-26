@@ -5,3 +5,5 @@ TMalign*
 /.vscode/
 /code/__pycache__/
 /code/.ipynb_checkpoints/
+/checkpoint/
+/log

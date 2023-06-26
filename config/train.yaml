@@ -1,0 +1,29 @@
+dataset:
+  path: '/home/tangwuguo/datasets/scope40'
+  dataset_file: 'pdb_scope_db40.csv'  # 'pdb_scope_db40.csv' 'scop40_s.csv'
+  pdb_dir: 'dbstyle_all-40-2.08'  # 'dbstyle_all-40-2.08' 'ents'
+  processed_file: 'scope_superfamily.pkl.gz'
+  split_ratio: [0.98, 0.01]  # [0.98, 0.01] [0.8, 0.1]
+  seed: 1
+
+task:
+  num_mlp_layer: 3
+  num_class: 2065
+  model:
+    input_dim: 21
+    hidden_dims: [512, 512, 512]
+    num_relation: 7
+    batch_norm: True
+    concat_hidden: True
+    short_cut: True
+    readout: 'sum'
+  tmscore:
+    id2label_path: '/home/tangwuguo/datasets/pdb_scope_id2label.pkl'    
+    fa_path: './astral-scopdom-seqres-gd-sel-gs-bib-40-1.75.fa'
+    pkl_file: './fa.pkl'
+
+engine:
+  gpus: [4]
+  batch_size: 64
+  lr: 1e-4
+  num_epoch: 20  # 20

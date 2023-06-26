@@ -9,37 +9,32 @@ from rdkit import Chem
 from tqdm import tqdm
 import logging
 import warnings
+from sklearn.utils import shuffle
 logger = logging.getLogger(__name__)
 
 
 @R.register("datasets.ScopeSuperFamilyClassify")
 class ScopeSuperFamilyClassify(data.ProteinDataset):
-    dataset_file = "pdb_scope_db40.csv"
-    pdb_dir = "dbstyle_all-40-2.08"
-    processed_file = 'scope_superfamily.pkl.gz'
-
-    splits = ["train", "valid", "test"]
-    split_ratio = [0.8, 0.1]
-    target_fields = ["superfamily_label"]  # label column
-
-    def __init__(self, path='/home/tangwuguo/datasets/scope40', 
-                 dataset_file='pdb_scope_db40.csv',  
-                 pdb_dir = 'dbstyle_all-40-2.08', verbose=1, **kwargs):
-        if not os.path.exists(path):
-            raise FileExistsError("Unknown path `%s` for SCOPE dataset" % path)
-        self.path = path
-        self.dataset_file = dataset_file
-        self.pdb_dir = pdb_dir
+    def __init__(self, params_db, verbose=1, **kwargs):
+        self.path = params_db['path']
+        self.dataset_file = params_db['dataset_file']
+        self.pdb_dir = params_db['pdb_dir']
+        self.processed_file = params_db['processed_file']
+        self.split_ratio = params_db['split_ratio']
         
-        self.df = pd.read_csv(os.path.join(path, self.dataset_file))
-        pkl_file = os.path.join(path, self.processed_file)
+        self.splits = ["train", "valid", "test"]    
+        self.target_fields = ["superfamily_label"]  # label column
+        
+        self.df = pd.read_csv(os.path.join(self.path, self.dataset_file))
+        self.df = shuffle(self.df, random_state=params_db['seed'])  # shuffle dataset
+        pkl_file = os.path.join(self.path, self.processed_file)
 
         if os.path.exists(pkl_file):
             # load processed pkl
             self.load_pickle(pkl_file, verbose=verbose, **kwargs)
         else:
             pdb_files = self.df['id']
-            pdb_files = pdb_files.apply(lambda x: os.path.join(path, self.pdb_dir, x + '.ent')).tolist()
+            pdb_files = pdb_files.apply(lambda x: os.path.join(self.path, self.pdb_dir, x + '.ent')).tolist()
             self.load_pdbs_drop(pdb_files=pdb_files, verbose=1, **kwargs)
             self.save_pickle(pkl_file, verbose=verbose)
 
@@ -50,7 +45,7 @@ class ScopeSuperFamilyClassify(data.ProteinDataset):
         self.num_samples = [train_size, valid_size, test_size]
         self.targets = {'superfamily_label': torch.tensor(self.df['label'].tolist())}
 
-    def split(self, keys=None):
+    def split(self, keys=None): 
         keys = keys or self.splits
         offset = 0
         splits = []

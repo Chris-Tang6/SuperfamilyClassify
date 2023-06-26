@@ -11,6 +11,9 @@ from torch.utils import data as torch_data
 from torchdrug import data, core, utils
 from torchdrug.core import Registry as R
 from torchdrug.utils import comm, pretty
+import os
+import time
+
 
 module = sys.modules[__name__]
 logger = logging.getLogger(__name__)
@@ -31,6 +34,7 @@ class SupEngine(core.Engine):
         self.batch_size = batch_size
         self.gradient_interval = gradient_interval
         self.num_worker = num_worker
+        self.time = time.strftime("%Y-%m-%d_%H:%M",time.localtime())
         
         if gpus is None:
                 self.device = torch.device("cpu")
@@ -86,6 +90,8 @@ class SupEngine(core.Engine):
         sampler = torch_data.DistributedSampler(self.train_set, self.world_size, self.rank)
         dataloader = data.DataLoader(self.train_set, self.batch_size, sampler=sampler, num_workers=self.num_worker)        
         batch_per_epoch = len(dataloader)
+        epoch_metrics = []
+        best_f1 = -1
         for i_epoch in self.meter(num_epoch):
             metrics = []
             start_id = 0
@@ -115,9 +121,21 @@ class SupEngine(core.Engine):
                     metrics = []
                     start_id = batch_id + 1
                     gradient_interval = min(batch_per_epoch - start_id, self.gradient_interval)
-
+            
+            # add epoch metrics to list
+            m_acc = round(sum(self.meter.records['ACC'][-batch_per_epoch:])/batch_per_epoch, 4)
+            m_f1 = round(sum(self.meter.records['F1'][-batch_per_epoch:])/batch_per_epoch, 4)
+            m_ce = round(sum(self.meter.records['CELoss'][-batch_per_epoch:])/batch_per_epoch, 4)
+            epoch_metrics.append((i_epoch, m_acc, m_f1, m_ce))
+            # dump model
+            if m_f1 > best_f1:
+                best_f1 = m_f1           
+                torch.save(self.model.state_dict(), f"./checkpoint/model_param{self.time}.pkl")
+                module.logger.info(f"Save Model Params at Epoch-{i_epoch}") 
             if self.scheduler:
                 self.scheduler.step()
+        # write to log file...
+        self.write_log(epoch_metrics)
         
 
     @torch.no_grad()
@@ -150,3 +168,13 @@ class SupEngine(core.Engine):
         self.meter.log(metric, category="%s/epoch" % split)
 
         return metric    
+    
+    def write_log(self, log_list):
+        log_dir_name = os.path.join('log', 'train_'+self.time+'.log')
+        with open(log_dir_name, 'w+') as f:
+            f.write(f'Epoch\tACC\tF1\tCELoss\n')
+            for item in log_list:
+                f.write(f'{item[0]}\t{item[1]}\t{item[2]}\t{item[3]}\n')
+        module.logger.info(f"Training Log Dump Over at {log_dir_name}")           
+            
+        

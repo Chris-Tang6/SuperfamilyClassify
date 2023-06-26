@@ -8,24 +8,25 @@ from TMScore import getTMScore
 import pandas as pd
 import os
 from sklearn.metrics import accuracy_score, f1_score
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,4"
 
 @R.register("tasks.SuperfamilyPrediction")
 class SuperfamilyPrediction(tasks.Task, core.Configurable):
     """ 
         SuperfamilyPrediction is a multilabel classification task.        
     """ 
-    def __init__(self, model, num_mlp_layer=1, num_class=None, 
-                 graph_construction_model=None, verbose=0):
+    def __init__(self, model, params, graph_construction_model=None, 
+                  verbose=0):
         super(SuperfamilyPrediction, self).__init__()
         self.model = model
-        self.num_mlp_layer = num_mlp_layer
-        self.num_class = (num_class,) if isinstance(num_class, int) else num_class
+        self.num_mlp_layer = params['task']['num_mlp_layer']        
+        self.num_class = (params['task']['num_class'],)
         self.graph_construction_model = graph_construction_model
         self.verbose = verbose
         
-        self.path = '/home/tangwuguo/datasets/scope40_s'
-        self.dataset_file = 'scop40_s.csv'
-        self.pdb_dir = 'ents'
+        self.path = params['dataset']['path']
+        self.dataset_file = params['dataset']['dataset_file']
+        self.pdb_dir = params['dataset']['pdb_dir'] 
         self.df = pd.read_csv(os.path.join(self.path, self.dataset_file))
      
     def preprocess(self, train_set, valid_set, test_set):
@@ -41,7 +42,7 @@ class SuperfamilyPrediction(tasks.Task, core.Configurable):
         metric.update(self.evaluate(pred, target, csv_idx))
         
         loss = F.cross_entropy(pred, target)
-        metric["ce loss"] = loss
+        metric["CELoss"] = loss
         all_loss += loss
         return all_loss, metric
      
@@ -78,7 +79,7 @@ class SuperfamilyPrediction(tasks.Task, core.Configurable):
         
         pdb_names = self.df.iloc[csv_idx.tolist()]['id'].tolist()
         pdb_names = [os.path.join(self.path, self.pdb_dir, i + '.ent') for i in pdb_names]                    
-        tm_list, tm_score = getTMScore(pdb_names, target)  # TODO by watch tm_list to find weak pred samples               
+        tm_list, tm_score = getTMScore(pdb_names, target)             
         return {
             "ACC": torch.tensor(acc),            
             "F1": torch.tensor(f1),
